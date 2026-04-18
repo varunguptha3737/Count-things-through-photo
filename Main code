@@ -3,118 +3,90 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Stone Counter</title>
+<title>Charm Counter</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #0f0e0d; --surface: #1c1a18; --border: #2e2b27;
-    --accent: #e8c96d; --accent2: #c4523a; --green: #5cb87a;
-    --text: #f0ebe3; --muted: #7a746c; --radius: 14px;
+    --bg: #0d0b08; --surface: #1a1710; --border: #2e2a18;
+    --accent: #e8c96d; --green: #5de08a; --red: #c4523a;
+    --text: #f0ebe3; --muted: #7a6f55; --radius: 14px;
   }
   body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100dvh; display: flex; flex-direction: column; }
-
-  header {
-    padding: 16px 20px 12px; display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 100;
-  }
+  header { padding: 16px 20px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 100; }
   .logo { display: flex; align-items: center; gap: 10px; }
   .logo-icon { width: 34px; height: 34px; background: var(--accent); border-radius: 8px; display: grid; place-items: center; font-size: 18px; }
   h1 { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em; }
-  .count-badge {
-    font-family: 'Space Mono', monospace; font-size: 1.4rem; font-weight: 700;
-    color: var(--accent); background: rgba(232,201,109,0.12);
-    border: 1.5px solid rgba(232,201,109,0.3); border-radius: 10px;
-    padding: 4px 14px; min-width: 60px; text-align: center; transition: transform 0.15s;
-  }
+  .count-badge { font-family: 'Space Mono', monospace; font-size: 1.4rem; font-weight: 700; color: var(--accent); background: rgba(232,201,109,0.12); border: 1.5px solid rgba(232,201,109,0.3); border-radius: 10px; padding: 4px 14px; min-width: 60px; text-align: center; transition: transform 0.15s; }
   .count-badge.bump { transform: scale(1.25); }
+  main { flex: 1; display: flex; flex-direction: column; padding: 14px; gap: 12px; padding-bottom: 30px; }
 
-  main { flex: 1; display: flex; flex-direction: column; padding: 14px; gap: 12px; }
+  .status-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-family: 'Space Mono', monospace; font-size: 0.72rem; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+  .status-bar.loading .status-dot { animation: pulse 1s infinite; }
+  .status-bar.ready .status-dot { background: var(--green); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
-  /* API SETUP */
-  .setup-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-  .setup-card.connected { border-color: rgba(92,184,122,0.4); background: rgba(92,184,122,0.05); }
-  .setup-header { display: flex; align-items: center; justify-content: space-between; }
-  .setup-title { font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background 0.3s; }
-  .status-dot.on { background: var(--green); box-shadow: 0 0 6px var(--green); }
-  .setup-body { display: flex; flex-direction: column; gap: 8px; }
-  .setup-body.hidden { display: none; }
-  .input-row { display: flex; gap: 8px; }
-  .api-input {
-    flex: 1; background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px;
-    padding: 10px 14px; color: var(--text); font-family: 'Space Mono', monospace;
-    font-size: 0.78rem; outline: none; transition: border-color 0.2s;
-  }
-  .api-input:focus { border-color: var(--accent); }
-  .api-input::placeholder { color: var(--muted); }
-  .help-text { font-family: 'Space Mono', monospace; font-size: 0.7rem; color: var(--muted); line-height: 1.7; }
-  .help-text a { color: var(--accent); text-decoration: none; }
-
-  /* BUTTONS */
-  .btn {
-    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.85rem;
-    padding: 12px 18px; border-radius: 10px; border: 1.5px solid transparent;
-    cursor: pointer; transition: all 0.15s; white-space: nowrap; display: inline-block; text-align: center;
-  }
-  .btn-accent { background: var(--accent); color: #0f0e0d; border-color: var(--accent); }
-  .btn-accent:active { filter: brightness(0.85); transform: scale(0.97); }
-  .btn-danger { background: transparent; color: var(--accent2); border-color: var(--accent2); }
-  .btn-danger:active { background: rgba(196,82,58,0.12); transform: scale(0.97); }
-  .btn-ghost { background: var(--surface); color: var(--muted); border-color: var(--border); }
-  .btn-ghost:active { background: var(--border); transform: scale(0.97); }
-  .btn-green { background: var(--green); color: #0f0e0d; border-color: var(--green); flex: 1; }
-  .btn-green:active { filter: brightness(0.85); transform: scale(0.97); }
-  .btn-green:disabled { opacity: 0.4; pointer-events: none; }
-
-  /* UPLOAD ZONE - now uses a visible button */
-  .upload-zone {
-    background: var(--surface); border: 2px dashed var(--border); border-radius: var(--radius);
-    padding: 30px 20px; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center;
-  }
-  .upload-icon { font-size: 2.8rem; }
+  .upload-zone { background: var(--surface); border: 2px dashed var(--border); border-radius: var(--radius); padding: 28px 20px; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
+  .upload-icon { font-size: 2.6rem; }
   .upload-zone h2 { font-size: 1rem; font-weight: 700; }
-  .upload-zone p { font-size: 0.75rem; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .upload-zone p { font-size: 0.73rem; color: var(--muted); font-family: 'Space Mono', monospace; line-height: 1.5; }
   .upload-buttons { display: flex; gap: 10px; width: 100%; }
-  .upload-btn {
-    flex: 1; background: var(--accent); color: #0f0e0d;
-    border: none; border-radius: 10px; padding: 13px 10px;
-    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.85rem;
-    cursor: pointer; transition: all 0.15s;
-  }
+  .upload-btn { flex: 1; background: var(--accent); color: #0d0b08; border: none; border-radius: 10px; padding: 13px 10px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.15s; }
   .upload-btn:active { filter: brightness(0.85); transform: scale(0.97); }
   .upload-btn.secondary { background: var(--surface); color: var(--text); border: 1.5px solid var(--border); }
+  #file-camera, #file-gallery { display: none; }
 
-  /* Hidden file inputs */
-  #file-camera { display: none; }
-  #file-gallery { display: none; }
-
-  /* CANVAS */
   .canvas-section { display: none; flex-direction: column; gap: 10px; }
   .canvas-section.active { display: flex; }
-  .canvas-wrapper { position: relative; border-radius: var(--radius); overflow: hidden; border: 1.5px solid var(--border); background: #000; touch-action: none; }
-  #main-canvas { display: block; width: 100%; height: auto; max-height: 55dvh; }
-  .overlay-canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
-  .loading-overlay {
-    position: absolute; inset: 0; background: rgba(15,14,13,0.78);
-    display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
-  }
-  .loading-overlay.show { display: flex; }
-  .spinner { width: 40px; height: 40px; border: 3px solid rgba(232,201,109,0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { font-family: 'Space Mono', monospace; font-size: 0.78rem; color: var(--accent); }
+  .canvas-wrapper { position: relative; border-radius: var(--radius); overflow: hidden; border: 1.5px solid var(--border); background: #000; }
+  #display-canvas { display: block; width: 100%; height: auto; max-height: 50dvh; }
+  #src-canvas { display: none; }
 
-  .slider-row { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
-  .slider-label { font-size: 0.75rem; color: var(--muted); font-family: 'Space Mono', monospace; white-space: nowrap; }
+  .controls-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 11px; }
+  .controls-title { font-size: 0.72rem; font-weight: 700; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .hint { font-size: 0.68rem; color: var(--muted); font-family: 'Space Mono', monospace; line-height: 1.55; }
+
+  /* Gold range visual */
+  .gold-range-bar { height: 8px; border-radius: 4px; background: linear-gradient(to right, hsl(15,80%,50%), hsl(35,90%,55%)); border: 1px solid var(--border); }
+
+  .slider-row { display: flex; align-items: center; gap: 8px; }
+  .slider-label { font-size: 0.7rem; color: var(--muted); font-family: 'Space Mono', monospace; min-width: 100px; }
   input[type=range] { flex: 1; accent-color: var(--accent); cursor: pointer; }
-  .slider-val { font-family: 'Space Mono', monospace; font-size: 0.75rem; color: var(--accent); min-width: 28px; text-align: right; }
+  .slider-val { font-family: 'Space Mono', monospace; font-size: 0.7rem; color: var(--accent); min-width: 32px; text-align: right; }
 
-  .toolbar { display: flex; gap: 8px; align-items: center; }
+  .sep { height: 1px; background: var(--border); }
 
-  /* HISTORY */
+  .tab-row { display: flex; gap: 6px; }
+  .tab-btn { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.72rem; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; background: transparent; color: var(--muted); transition: all 0.15s; }
+  .tab-btn.active { background: var(--accent); color: #0d0b08; border-color: var(--accent); }
+  .tab-panel { display: none; flex-direction: column; gap: 10px; }
+  .tab-panel.active { display: flex; }
+
+  .result-info { background: rgba(232,201,109,0.07); border: 1px solid rgba(232,201,109,0.2); border-radius: 10px; padding: 10px 14px; font-family: 'Space Mono', monospace; font-size: 0.72rem; color: var(--muted); display: none; line-height: 1.65; }
+  .result-info.show { display: block; }
+  .result-info strong { color: var(--accent); }
+
+  .toolbar { display: flex; gap: 8px; }
+  .btn { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.82rem; padding: 11px 16px; border-radius: 10px; border: 1.5px solid transparent; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .btn-gold { background: var(--accent); color: #0d0b08; border-color: var(--accent); flex: 1; }
+  .btn-gold:active { filter: brightness(0.85); transform: scale(0.97); }
+  .btn-gold:disabled { opacity: 0.4; pointer-events: none; }
+  .btn-green { background: var(--green); color: #0d0b08; border-color: var(--green); }
+  .btn-green:active { filter: brightness(0.85); transform: scale(0.97); }
+  .btn-ghost { background: var(--surface); color: var(--muted); border-color: var(--border); }
+  .btn-ghost:active { background: var(--border); transform: scale(0.97); }
+
+  /* Manual add/remove tap mode */
+  .mode-bar { display: flex; gap: 8px; align-items: center; }
+  .mode-label { font-size: 0.7rem; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .mode-btn { font-family: 'Space Mono', monospace; font-size: 0.7rem; padding: 5px 10px; border-radius: 7px; border: 1px solid var(--border); cursor: pointer; background: var(--bg); color: var(--muted); transition: all 0.15s; }
+  .mode-btn.active-add { background: var(--green); color: #0d0b08; border-color: var(--green); }
+  .mode-btn.active-remove { background: var(--red); color: #fff; border-color: var(--red); }
+
   .history-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
   .history-header { padding: 10px 16px; font-size: 0.72rem; font-family: 'Space Mono', monospace; color: var(--muted); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
-  .history-list { max-height: 160px; overflow-y: auto; }
+  .history-list { max-height: 150px; overflow-y: auto; }
   .history-item { display: flex; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--border); gap: 10px; }
   .history-item:last-child { border-bottom: none; }
   .history-item .thumb { width: 36px; height: 36px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; }
@@ -122,15 +94,7 @@
   .h-count { font-family: 'Space Mono', monospace; color: var(--accent); font-weight: 700; }
   .empty-history { padding: 20px; text-align: center; color: var(--muted); font-size: 0.75rem; font-family: 'Space Mono', monospace; }
 
-  .toast {
-    position: fixed; bottom: 24px; left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    background: var(--surface); border: 1px solid var(--border);
-    color: var(--text); padding: 10px 20px; border-radius: 40px;
-    font-size: 0.78rem; font-family: 'Space Mono', monospace;
-    z-index: 999; transition: transform 0.25s cubic-bezier(.34,1.56,.64,1);
-    pointer-events: none; white-space: nowrap;
-  }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 10px 20px; border-radius: 40px; font-size: 0.78rem; font-family: 'Space Mono', monospace; z-index: 999; transition: transform 0.25s cubic-bezier(.34,1.56,.64,1); pointer-events: none; white-space: nowrap; max-width: 90vw; text-align: center; }
   .toast.show { transform: translateX(-50%) translateY(0); }
 </style>
 </head>
@@ -138,77 +102,128 @@
 
 <header>
   <div class="logo">
-    <div class="logo-icon">🪨</div>
-    <h1>Stone Counter</h1>
+    <div class="logo-icon">🪬</div>
+    <h1>Charm Counter</h1>
   </div>
   <div class="count-badge" id="count-badge">0</div>
 </header>
 
 <main>
-
-  <!-- API SETUP -->
-  <div class="setup-card" id="setup-card">
-    <div class="setup-header">
-      <div class="setup-title">
-        <div class="status-dot" id="status-dot"></div>
-        <span id="setup-title-text">Google Gemini API (Free)</span>
-      </div>
-      <button class="btn btn-ghost" id="toggle-setup-btn" style="padding:6px 12px;font-size:0.75rem">▼</button>
-    </div>
-    <div class="setup-body" id="setup-body">
-      <div class="input-row">
-        <input class="api-input" type="password" id="api-key-input" placeholder="Paste Gemini API key…">
-        <button class="btn btn-accent" id="connect-btn">Connect</button>
-      </div>
-      <div class="help-text">
-        Free key → <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a><br>
-        ✓ No credit card &nbsp;✓ 1500 free/day &nbsp;✓ Key stays on device
-      </div>
-    </div>
+  <div class="status-bar loading" id="status-bar">
+    <div class="status-dot"></div>
+    <span id="status-text">Loading OpenCV… (first load ~10 sec, then offline forever)</span>
   </div>
 
-  <!-- UPLOAD ZONE -->
   <div class="upload-zone" id="upload-zone">
-    <div class="upload-icon">🪨</div>
-    <h2>Add a photo of stones</h2>
-    <p>Choose how to add your photo below</p>
+    <div class="upload-icon">🪬</div>
+    <h2>Add photo of charms</h2>
+    <p>Detects gold wire — works for any colour gem or pearl<br>100% offline after first load</p>
     <div class="upload-buttons">
       <button class="upload-btn" id="btn-camera">📷 Camera</button>
       <button class="upload-btn secondary" id="btn-gallery">🖼 Gallery</button>
     </div>
-    <p style="font-size:0.68rem;color:var(--muted)">Tap Camera to take a new photo, or Gallery to pick existing</p>
   </div>
 
-  <!-- Hidden file inputs — triggered by JS -->
   <input type="file" id="file-camera" accept="image/*" capture="environment">
   <input type="file" id="file-gallery" accept="image/*">
+  <canvas id="src-canvas"></canvas>
 
-  <!-- CANVAS SECTION -->
   <div class="canvas-section" id="canvas-section">
     <div class="canvas-wrapper">
-      <canvas id="main-canvas"></canvas>
-      <canvas class="overlay-canvas" id="overlay-canvas"></canvas>
-      <div class="loading-overlay" id="loading-overlay">
-        <div class="spinner"></div>
-        <div class="loading-text" id="loading-text">Analyzing stones…</div>
+      <canvas id="display-canvas"></canvas>
+    </div>
+
+    <!-- Manual correction mode -->
+    <div class="mode-bar">
+      <span class="mode-label">Manual fix:</span>
+      <button class="mode-btn" id="mode-off-btn">Off</button>
+      <button class="mode-btn" id="mode-add-btn">+ Add tap</button>
+      <button class="mode-btn" id="mode-remove-btn">− Remove tap</button>
+      <button class="mode-btn" id="undo-btn">↩ Undo</button>
+    </div>
+
+    <div class="controls-card">
+      <div class="controls-title">⚙ GOLD WIRE DETECTION</div>
+
+      <div class="tab-row">
+        <button class="tab-btn active" id="tab-gold-btn">🟡 Gold tune</button>
+        <button class="tab-btn" id="tab-size-btn">📐 Size</button>
+        <button class="tab-btn" id="tab-display-btn">🔵 Display</button>
+      </div>
+
+      <!-- GOLD TUNE TAB -->
+      <div class="tab-panel active" id="tab-gold">
+        <div class="hint">These are pre-set for gold/yellow wire. Only change if your wire looks different.</div>
+        <div class="gold-range-bar"></div>
+        <div class="slider-row">
+          <span class="slider-label">Hue min (yellow)</span>
+          <input type="range" id="sl-hmin" min="0" max="60" value="15">
+          <span class="slider-val" id="vl-hmin">15</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Hue max (gold)</span>
+          <input type="range" id="sl-hmax" min="10" max="90" value="38">
+          <span class="slider-val" id="vl-hmax">38</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Min saturation</span>
+          <input type="range" id="sl-sat" min="20" max="255" value="70">
+          <span class="slider-val" id="vl-sat">70</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Min brightness</span>
+          <input type="range" id="sl-bri" min="20" max="255" value="90">
+          <span class="slider-val" id="vl-bri">90</span>
+        </div>
+      </div>
+
+      <!-- SIZE TAB -->
+      <div class="tab-panel" id="tab-size">
+        <div class="hint">
+          <b>Min/Max blob</b>: size of each gold piece detected.<br>
+          <b>Group distance</b>: gold blobs closer than this = 1 charm. Increase if one charm is counting as many. Decrease if separate charms are merging.
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Min blob (px)</span>
+          <input type="range" id="sl-min" min="1" max="40" value="3">
+          <span class="slider-val" id="vl-min">3</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Max blob (px)</span>
+          <input type="range" id="sl-max" min="10" max="400" value="150">
+          <span class="slider-val" id="vl-max">150</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Group distance</span>
+          <input type="range" id="sl-group" min="5" max="120" value="40">
+          <span class="slider-val" id="vl-group">40</span>
+        </div>
+      </div>
+
+      <!-- DISPLAY TAB -->
+      <div class="tab-panel" id="tab-display">
+        <div class="slider-row">
+          <span class="slider-label">Dot size</span>
+          <input type="range" id="sl-dot" min="4" max="30" value="12">
+          <span class="slider-val" id="vl-dot">12</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Show numbers</span>
+          <input type="range" id="sl-nums" min="0" max="1" value="1" step="1">
+          <span class="slider-val" id="vl-nums">Yes</span>
+        </div>
       </div>
     </div>
 
-    <div class="slider-row">
-      <span class="slider-label">Mark size</span>
-      <input type="range" id="size-slider" min="6" max="36" value="14">
-      <span class="slider-val" id="size-val">14</span>
-    </div>
+    <div class="result-info" id="result-info"></div>
 
     <div class="toolbar">
-      <button class="btn btn-green" id="detect-btn" disabled>🔍 Detect Stones</button>
-      <button class="btn btn-danger" id="undo-btn">↩</button>
-      <button class="btn btn-accent" id="save-btn">💾</button>
+      <button class="btn btn-gold" id="detect-btn" disabled>🔍 Count Charms</button>
+      <button class="btn btn-green" id="save-btn">💾 Save</button>
       <button class="btn btn-ghost" id="new-btn">＋</button>
     </div>
   </div>
 
-  <!-- HISTORY -->
   <div class="history-section">
     <div class="history-header">
       <span>SAVED COUNTS</span>
@@ -218,232 +233,154 @@
       <div class="empty-history">No saved counts yet</div>
     </div>
   </div>
-
 </main>
-
 <div class="toast" id="toast"></div>
 
+<script async src="https://docs.opencv.org/4.9.0/opencv.js" onload="onOpenCvReady()" onerror="onOpenCvError()"></script>
 <script>
-  let img = null, dots = [], imgName = 'photo', imgBase64 = null;
-  let apiKey = '', dotRadius = 14;
-  let history = JSON.parse(localStorage.getItem('stone_history') || '[]');
+  let cvReady = false, img = null, imgName = 'photo';
+  let charms = [];       // final grouped charm positions [{x,y}]
+  let tapMode = 'off';   // 'off' | 'add' | 'remove'
+  let savedHistory = JSON.parse(localStorage.getItem('charm_history') || '[]');
 
-  const uploadZone     = document.getElementById('upload-zone');
-  const canvasSection  = document.getElementById('canvas-section');
-  const mainCanvas     = document.getElementById('main-canvas');
-  const overlayCanvas  = document.getElementById('overlay-canvas');
-  const countBadge     = document.getElementById('count-badge');
-  const detectBtn      = document.getElementById('detect-btn');
-  const undoBtn        = document.getElementById('undo-btn');
-  const saveBtn        = document.getElementById('save-btn');
-  const newBtn         = document.getElementById('new-btn');
-  const historyList    = document.getElementById('history-list');
-  const totalSaved     = document.getElementById('total-saved');
-  const toast          = document.getElementById('toast');
-  const loadingOverlay = document.getElementById('loading-overlay');
-  const sizeSlider     = document.getElementById('size-slider');
-  const sizeVal        = document.getElementById('size-val');
-  const apiInput       = document.getElementById('api-key-input');
-  const connectBtn     = document.getElementById('connect-btn');
-  const statusDot      = document.getElementById('status-dot');
-  const setupCard      = document.getElementById('setup-card');
-  const setupBody      = document.getElementById('setup-body');
-  const toggleSetupBtn = document.getElementById('toggle-setup-btn');
-  const setupTitleText = document.getElementById('setup-title-text');
-  const fileCamera     = document.getElementById('file-camera');
-  const fileGallery    = document.getElementById('file-gallery');
+  const el = id => document.getElementById(id);
+  const statusBar    = el('status-bar'), statusText = el('status-text');
+  const uploadZone   = el('upload-zone'), canvasSection = el('canvas-section');
+  const displayCanvas= el('display-canvas'), srcCanvas = el('src-canvas');
+  const countBadge   = el('count-badge'), detectBtn = el('detect-btn');
+  const saveBtn      = el('save-btn'), newBtn = el('new-btn');
+  const historyList  = el('history-list'), totalSaved = el('total-saved');
+  const toast        = el('toast'), resultInfo = el('result-info');
+  const dctx         = displayCanvas.getContext('2d');
 
-  const ctx  = mainCanvas.getContext('2d');
-  const octx = overlayCanvas.getContext('2d');
+  function onOpenCvReady() {
+    cvReady = true;
+    statusBar.className = 'status-bar ready';
+    statusText.textContent = 'OpenCV ready ✓ — fully offline now';
+    if (img) detectBtn.disabled = false;
+  }
+  function onOpenCvError() {
+    statusText.textContent = '⚠ OpenCV failed to load — need internet for first load.';
+  }
 
-  // ── UPLOAD BUTTONS ──
-  // Camera button — triggers file input with capture
-  document.getElementById('btn-camera').addEventListener('click', () => {
-    fileCamera.value = '';
-    fileCamera.click();
+  // ── TABS ──
+  ['gold','size','display'].forEach(name => {
+    el('tab-' + name + '-btn').addEventListener('click', () => {
+      ['gold','size','display'].forEach(t => {
+        el('tab-' + t).classList.toggle('active', t === name);
+        el('tab-' + t + '-btn').classList.toggle('active', t === name);
+      });
+    });
   });
 
-  // Gallery button — triggers file input without capture
-  document.getElementById('btn-gallery').addEventListener('click', () => {
-    fileGallery.value = '';
-    fileGallery.click();
+  // ── SLIDERS ──
+  [['sl-hmin','vl-hmin'],['sl-hmax','vl-hmax'],['sl-sat','vl-sat'],['sl-bri','vl-bri'],
+   ['sl-min','vl-min'],['sl-max','vl-max'],['sl-group','vl-group'],['sl-dot','vl-dot']
+  ].forEach(([s,v]) => el(s).addEventListener('input', () => { el(v).textContent = el(s).value; }));
+  el('sl-nums').addEventListener('input', function() {
+    el('vl-nums').textContent = this.value === '1' ? 'Yes' : 'No';
+    if (charms.length) redrawDots();
   });
+  el('sl-dot').addEventListener('input', () => { if (charms.length) redrawDots(); });
+
+  // ── UPLOAD ──
+  el('btn-camera').addEventListener('click',  () => { el('file-camera').value=''; el('file-camera').click(); });
+  el('btn-gallery').addEventListener('click', () => { el('file-gallery').value=''; el('file-gallery').click(); });
 
   function handleFile(file) {
     if (!file) return;
     imgName = file.name || 'photo';
     const reader = new FileReader();
     reader.onload = ev => {
-      imgBase64 = ev.target.result.split(',')[1];
-      loadImage(ev.target.result);
+      const image = new Image();
+      image.onload = () => {
+        const MAX = 1400;
+        let w = image.naturalWidth, h = image.naturalHeight;
+        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+        srcCanvas.width = w; srcCanvas.height = h;
+        srcCanvas.getContext('2d').drawImage(image, 0, 0, w, h);
+        displayCanvas.width = w; displayCanvas.height = h;
+        dctx.drawImage(image, 0, 0, w, h);
+        img = image; charms = [];
+        uploadZone.style.display = 'none';
+        canvasSection.classList.add('active');
+        resultInfo.classList.remove('show');
+        setTapMode('off');
+        if (cvReady) detectBtn.disabled = false;
+        updateCount();
+      };
+      image.src = ev.target.result;
     };
     reader.readAsDataURL(file);
   }
+  el('file-camera').addEventListener('change', e => handleFile(e.target.files[0]));
+  el('file-gallery').addEventListener('change', e => handleFile(e.target.files[0]));
 
-  fileCamera.addEventListener('change', e => handleFile(e.target.files[0]));
-  fileGallery.addEventListener('change', e => handleFile(e.target.files[0]));
-
-  function loadImage(src) {
-    const image = new Image();
-    image.onload = () => {
-      img = image; dots = [];
-      mainCanvas.width = image.naturalWidth;
-      mainCanvas.height = image.naturalHeight;
-      ctx.drawImage(image, 0, 0);
-      syncOverlay();
-      uploadZone.style.display = 'none';
-      canvasSection.classList.add('active');
-      if (apiKey) detectBtn.disabled = false;
-      updateCount(); drawDots();
-    };
-    image.src = src;
+  // ── MANUAL TAP MODE ──
+  function setTapMode(mode) {
+    tapMode = mode;
+    el('mode-off-btn').className    = 'mode-btn' + (mode === 'off'    ? ' active-add' : '');
+    el('mode-add-btn').className    = 'mode-btn' + (mode === 'add'    ? ' active-add' : '');
+    el('mode-remove-btn').className = 'mode-btn' + (mode === 'remove' ? ' active-remove' : '');
+    displayCanvas.style.cursor = mode === 'off' ? 'default' : (mode === 'add' ? 'crosshair' : 'not-allowed');
   }
-
-  function syncOverlay() {
-    overlayCanvas.width = mainCanvas.offsetWidth;
-    overlayCanvas.height = mainCanvas.offsetHeight;
-  }
-
-  const ro = new ResizeObserver(() => { if (img) { syncOverlay(); drawDots(); } });
-  ro.observe(mainCanvas);
-
-  // ── API CONNECT ──
-  connectBtn.addEventListener('click', () => {
-    const key = apiInput.value.trim();
-    if (!key) { showToast('Paste your API key first'); return; }
-    apiKey = key;
-    statusDot.classList.add('on');
-    setupCard.classList.add('connected');
-    setupTitleText.textContent = 'Gemini API — Connected ✓';
-    setupBody.classList.add('hidden');
-    toggleSetupBtn.textContent = '▶';
-    if (img) detectBtn.disabled = false;
-    showToast('Connected! Upload a photo to start 🪨');
+  el('mode-off-btn').addEventListener('click',    () => setTapMode('off'));
+  el('mode-add-btn').addEventListener('click',    () => setTapMode('add'));
+  el('mode-remove-btn').addEventListener('click', () => setTapMode('remove'));
+  el('undo-btn').addEventListener('click', () => {
+    if (!charms.length) return;
+    charms.pop(); updateCount(); redrawDots(); showToast('Removed last dot');
   });
 
-  toggleSetupBtn.addEventListener('click', () => {
-    const hidden = setupBody.classList.toggle('hidden');
-    toggleSetupBtn.textContent = hidden ? '▶' : '▼';
-  });
-
-  // ── COORDS ──
-  function screenToImage(sx, sy) {
-    return { x: sx * (img.naturalWidth / mainCanvas.offsetWidth), y: sy * (img.naturalHeight / mainCanvas.offsetHeight) };
-  }
-  function imageToScreen(ix, iy) {
-    return { x: ix * (mainCanvas.offsetWidth / img.naturalWidth), y: iy * (mainCanvas.offsetHeight / img.naturalHeight) };
-  }
-  function getPointerPos(e) {
-    const rect = overlayCanvas.getBoundingClientRect();
-    const src = e.touches ? e.touches[0] : e;
-    return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+  function getCanvasPos(e) {
+    const rect = displayCanvas.getBoundingClientRect();
+    const src  = e.touches ? e.touches[0] : e;
+    const scaleX = displayCanvas.width  / rect.width;
+    const scaleY = displayCanvas.height / rect.height;
+    return { x: (src.clientX - rect.left) * scaleX, y: (src.clientY - rect.top) * scaleY };
   }
 
-  // ── TAP ──
-  overlayCanvas.addEventListener('touchstart', handleTap, { passive: false });
-  overlayCanvas.addEventListener('mousedown', handleTap);
+  displayCanvas.addEventListener('touchstart', handleCanvasTap, { passive: false });
+  displayCanvas.addEventListener('mousedown',  handleCanvasTap);
 
-  function handleTap(e) {
+  function handleCanvasTap(e) {
+    if (tapMode === 'off') return;
     e.preventDefault();
-    if (!img) return;
-    const pos = getPointerPos(e);
-    for (let i = dots.length - 1; i >= 0; i--) {
-      const sp = imageToScreen(dots[i].x, dots[i].y);
-      const dx = sp.x - pos.x, dy = sp.y - pos.y;
-      if (Math.sqrt(dx*dx + dy*dy) < 22) {
-        dots.splice(i, 1); updateCount(); drawDots();
-        showToast('Dot removed'); return;
+    const pos = getCanvasPos(e);
+    const DOT = parseInt(el('sl-dot').value);
+
+    if (tapMode === 'add') {
+      charms.push({ x: pos.x, y: pos.y });
+      updateCount(); redrawDots(); bumpBadge();
+    } else if (tapMode === 'remove') {
+      // Remove closest dot within tap radius
+      let closest = -1, minDist = DOT * 3;
+      charms.forEach((c, i) => {
+        const d = Math.hypot(c.x - pos.x, c.y - pos.y);
+        if (d < minDist) { minDist = d; closest = i; }
+      });
+      if (closest >= 0) {
+        charms.splice(closest, 1);
+        updateCount(); redrawDots();
+        showToast('Dot removed');
       }
     }
-    const ip = screenToImage(pos.x, pos.y);
-    dots.push(ip); updateCount(); drawDots(); bumpBadge();
   }
-
-  function drawDots() {
-    octx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-    const r = dotRadius;
-    dots.forEach((d, i) => {
-      const sp = imageToScreen(d.x, d.y);
-      octx.beginPath(); octx.arc(sp.x, sp.y, r + 3, 0, Math.PI * 2);
-      octx.fillStyle = 'rgba(15,14,13,0.55)'; octx.fill();
-      octx.beginPath(); octx.arc(sp.x, sp.y, r, 0, Math.PI * 2);
-      octx.fillStyle = '#e8c96d'; octx.fill();
-      octx.fillStyle = '#0f0e0d';
-      octx.font = `bold ${Math.max(8, r * 1.1)}px "Space Mono", monospace`;
-      octx.textAlign = 'center'; octx.textBaseline = 'middle';
-      octx.fillText(i + 1, sp.x, sp.y + 0.5);
-    });
-  }
-
-  sizeSlider.addEventListener('input', () => {
-    dotRadius = parseInt(sizeSlider.value);
-    sizeVal.textContent = dotRadius;
-    drawDots();
-  });
-
-  function updateCount() { countBadge.textContent = dots.length; }
-  function bumpBadge() {
-    countBadge.classList.remove('bump'); void countBadge.offsetWidth;
-    countBadge.classList.add('bump');
-    setTimeout(() => countBadge.classList.remove('bump'), 200);
-  }
-
-  undoBtn.addEventListener('click', () => {
-    if (!dots.length) return;
-    dots.pop(); updateCount(); drawDots(); showToast('Last dot removed');
-  });
 
   // ── DETECT ──
-  detectBtn.addEventListener('click', async () => {
-    if (!apiKey) { showToast('Connect API key first'); return; }
-    if (!imgBase64) return;
-    loadingOverlay.classList.add('show');
+  detectBtn.addEventListener('click', () => {
+    if (!cvReady || !img) return;
     detectBtn.disabled = true;
+    detectBtn.textContent = '⏳ Counting…';
+    setTapMode('off');
+    setTimeout(() => {
+      try { runDetection(); } catch(e) { showToast('Error: ' + e.message); console.error(e); }
+      detectBtn.disabled = false;
+      detectBtn.textContent = '🔍 Count Charms';
+    }, 50);
+  });
 
-    try {
-      const prompt = `You are a stone/rock counter. Find every individual stone, rock, pebble, or gravel piece in this image.
-
-Return ONLY a valid JSON array — no markdown, no explanation, nothing else.
-Each item: {"x": fraction_of_width, "y": fraction_of_height}
-Where 0.0=left/top, 1.0=right/bottom.
-
-Example: [{"x":0.12,"y":0.34},{"x":0.56,"y":0.78}]
-
-Be thorough — mark every stone visible.`;
-
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [
-              { inline_data: { mime_type: 'image/jpeg', data: imgBase64 } },
-              { text: prompt }
-            ]}],
-            generationConfig: { temperature: 0.1, maxOutputTokens: 8192 }
-          })
-        }
-      );
-
-      if (!response.ok) {
-        const err = await response.json();
-        const msg = err.error?.message || `HTTP ${response.status}`;
-        if (response.status === 400) throw new Error('Invalid API key — check and reconnect.');
-        if (response.status === 429) throw new Error('Rate limit. Wait a moment and retry.');
-        throw new Error(msg);
-      }
-
-      const data = await response.json();
-      const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      const clean = raw.replace(/```json|```/g, '').trim();
-
-      let parsed;
-      try { parsed = JSON.parse(clean); }
-      catch {
-        const match = clean.match(/\[[\s\S]*\]/);
-        if (match) parsed = JSON.parse(match[0]);
-        else throw new Error('Could not read AI response. Try again.');
-      }
-
-      if (!Array.isArray(parsed)) throw new Error('U
+  function runDetection() {
+    const hMin = parseInt(el('sl-hmin').value), hMax = parseInt(el('sl-hmax').value);
+    const sMin = parseInt(el('sl-sat').value),  vMin = parseInt(el('sl-bri').value);
+    const minR = pa
